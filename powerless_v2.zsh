@@ -45,18 +45,8 @@ else
 fi
 
 # Specify common variables.
-days=(月 火 水 木 金 土 日)
-days_color=(163 202 004 034 179 130 185)
 bold_start='%{%B%}'
 bold_end='%{%b%}'
-
-get-dow-kanji() {
-  echo -n "${days[$(date +%u)]}"
-}
-
-get-dow-color() {
-  echo -n "${days_color[$(date +%u)]}"
-}
 
 begin-color() {
   echo -n "%{$FG[$1]%}%{$BG[$2]%}"
@@ -143,8 +133,14 @@ get-git-info() {
 
     IFS='/' read -rA origin <<< $(git config --get remote.origin.url)
     local repo_name="${origin[-1]%.*}"
-  
-    echo -n "$bold_start$git_symbols$bold_end$bold_start$(begin-color $2 $3) $repo_name|$git_branch $bold_end$(end-color)"
+
+    local repo_dirname="$(basename $(git rev-parse --show-toplevel))"
+
+    if [[ "${repo_name}" == "${repo_dirname}" ]]; then
+      echo -n "$bold_start$git_symbols$bold_end$bold_start$(begin-color $2 $3) $repo_name|$git_branch $bold_end$(end-color)"
+    else
+      echo -n "$bold_start$git_symbols$bold_end$bold_start$(begin-color $2 $3) $repo_name:${repo_dirname}|$git_branch $bold_end$(end-color)"
+    fi
   fi
 }
 get-venv-info() { 
@@ -158,18 +154,15 @@ get-newline() {
 }
 
 get-prompt() {
-  local prompt_fg="$(get-dow-color)"
   local bg="$2"
 
   if [[ (-n "$last_code") && ($last_code -ne 0) ]]; then
-    prompt_fg="$1"
     bg="$3"
   fi
 
-  local prompt_time="$(begin-color $1 $bg)$bold_start $(date '+%d %H%M') $bold_end$(end-color)"
-  local prompt_day="$(begin-color $prompt_fg $bg)$(get-dow-kanji) $(end-color) "
+  local prompt="$(begin-color $1 $bg)$bold_start $(date '+%d %H:%M') $ $bold_end$(end-color) "
 
-  echo -n "$prompt_time$prompt_day"
+  echo -n "$prompt"
 }
 
 powerless-prompt() {
